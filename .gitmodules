@@ -4,7 +4,7 @@
 	branch = magia-core
 [submodule "pulp"]
 	path = pulp
-	url = https://github.com/dnadalini/gvsoc-pulp.git
+	url = git@github.com:dnadalini/gvsoc-pulp.git # https://github.com/dnadalini/gvsoc-pulp.git
 [submodule "plptest"]
 	path = plptest
 	url =  https://github.com/gvsoc/plptest.git
