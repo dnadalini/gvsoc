@@ -1,6 +1,7 @@
 [submodule "core"]
 	path = core
 	url = https://github.com/TheSSDGuy/gvsoc-core.git
+	branch = magia-core
 [submodule "pulp"]
 	path = pulp
 	url = https://github.com/dnadalini/gvsoc-pulp.git
