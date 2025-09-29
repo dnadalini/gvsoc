@@ -1,0 +1,1 @@
+../../core/docs/developer_manual/tutorials/utils/crt0.S
