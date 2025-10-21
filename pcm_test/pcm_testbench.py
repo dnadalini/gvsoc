@@ -29,9 +29,10 @@ class Soc(gvsoc.systree.Component):
         ico.o_MAP(mem.i_INPUT(), 'mem', base=0x00042000, size=0x00100000, rm_base=True)
 
         # PCM
-        pcm = pulp.pcm.pcm.Pcm(self, 'pcm')
-        #ico.o_MAP(pcm.i_CTRL_EXT(), 'ext_ctrl', base=0x41000, size=0x8, rm_base=True)
-        #ico.o_MAP(pcm.i_EXT(), 'ext', base=0x41100, size=0x200, rm_base=True)
+        mvm_latency_ns = 300 # MVM latency in ns
+        # Conversion of latency in clock cycles (TODO: make the clock frequency configurable)
+        mvm_latency = int(mvm_latency_ns/((1/100000000)*(10**9)))
+        pcm = pulp.pcm.pcm.Pcm(self, 'pcm', mvm_latency=mvm_latency)
         ico.o_MAP(pcm.i_hwpe_slv(), 'hwpe_slv', base=0x41000, size=0x1000, rm_base=True)
         pcm.o_stream_mst(ico.i_INPUT())
 

@@ -2,6 +2,12 @@
 #include <stdint.h>
 #include "pcm_hwpe_archi.h"
 
+#define VECTOR_SIZE 512
+#define N_VECTORS 3
+#define N_ELEMENTS VECTOR_SIZE*N_VECTORS
+#define STRIDE 64
+#define N_TRANSFERS N_ELEMENTS/STRIDE
+
 int main() {
 
     // Set PCM parameters (all LA, sector 1)
@@ -24,40 +30,52 @@ int main() {
     }
 
     // Fake initialization of Xi buffer
-    int8_t Xi[512];
-    for (uint32_t i = 0; i < 4; i++)
+    int8_t Xi[N_ELEMENTS];
+    for (uint32_t i = 0; i < 12; i++)
     {
         for (uint32_t j = 0; j < 128; j++)
         {
-            //Xi[i*128+j] = (int8_t)j;
             Xi[i*128+j] = 1;
         }
         
     }
 
     // Declare output vector
-    int8_t Yi[512];
+    volatile int8_t Yi[N_ELEMENTS];
     
-    /* for (uint32_t i=0; i<512; i++){
-        Xi[i] = (int8_t) i;
-    } */
-
     // Streamer configuration
-    printf("Xi address: 0x%x\n", Xi);
+    printf("Xi address: %p\n", Xi);
+    printf("Yi address: %p\n", Yi);
     *(uint32_t *)(PCM_HWPE_JOB_SRC_ADDR) = Xi;
     *(uint32_t *)(PCM_HWPE_D0_LENGTH) = 8;
-    *(uint32_t *)(PCM_HWPE_D0_STRIDE) = 64;
-    *(uint32_t *)(PCM_HWPE_TOTAL_LENGTH) = 8;
+    *(uint32_t *)(PCM_HWPE_D0_STRIDE) = STRIDE; // N_INP_BURST
+    *(uint32_t *)(PCM_HWPE_D1_LENGTH) = N_VECTORS;  // N_VECTORS
+    *(uint32_t *)(PCM_HWPE_D1_STRIDE) = VECTOR_SIZE;
+    *(uint32_t *)(PCM_HWPE_TOTAL_LENGTH) = N_TRANSFERS; // N_ELEMENTS/64
     *(uint32_t *)(PCM_HWPE_JOB_DST_ADDR) = Yi;
     *(uint32_t *)(PCM_HWPE_OUT_D0_LENGTH) = 8;
-    *(uint32_t *)(PCM_HWPE_OUT_D0_STRIDE) = 64;
-    *(uint32_t *)(PCM_HWPE_OUT_TOTAL_LENGTH) = 8;
+    *(uint32_t *)(PCM_HWPE_OUT_D0_STRIDE) = STRIDE;
+    *(uint32_t *)(PCM_HWPE_OUT_D1_LENGTH) = N_VECTORS;
+    *(uint32_t *)(PCM_HWPE_OUT_D1_STRIDE) = VECTOR_SIZE;
+    *(uint32_t *)(PCM_HWPE_OUT_TOTAL_LENGTH) = N_TRANSFERS; // N_ELEMENTS/64
 
     *(uint32_t *)(PCM_HWPE_TRIG) = 0x000000001;
 
+    // Wait end of computation (IRQ not implemented yet)
+    volatile uint32_t status = *(uint32_t *)(PCM_HWPE_STATUS);
+    while(status != 0x00000001) {
+        for (uint32_t i=0; i<1000; i++){
+            ;;
+        }
+
+        status = *(uint32_t *)(PCM_HWPE_STATUS);
+    }
+
+    printf("HWPE finished computation - checking results...\n");
+
     uint32_t err = 0;
 
-    for (uint32_t i=0; i<512; i++) {
+    for (uint32_t i=0; i<1024; i++) {
         if(Yi[i] != 127) {
             err++;
             printf("Yi[%d] = %d!!\n", i, Yi[i]);
@@ -68,9 +86,6 @@ int main() {
         printf("TEST PASSED!!\n");
     else
         printf("TEST FAILED!!\n");
-
-    // Trigger a second time
-    *(uint32_t *)(PCM_HWPE_TRIG) = 0x000000001;
 
     return err;
 }

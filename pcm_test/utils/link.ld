@@ -122,7 +122,7 @@ SECTIONS
     . = ALIGN(8);
     . = ALIGN(16);
     stack_start = .;
-    . = . + 0x800;
+    . = . + 0x1000;
     stack = .;
     . = ALIGN(8);
   } > MEM
